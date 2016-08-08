@@ -9,6 +9,9 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.view.MotionEvent;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.util.TypedValue;
 
 /**
  * Created by user on 8/7/16.
@@ -26,6 +29,10 @@ public class DrawingView extends View {
     //canvas bitmap
     private Bitmap canvasBitmap;
 
+    private float brushSize, lastBrushSize;
+
+    private boolean erase=false;
+
     public DrawingView( Context context, AttributeSet attributeSet){
         super(context,attributeSet);
         setupDrawing();
@@ -37,11 +44,34 @@ public class DrawingView extends View {
         drawPaint = new Paint();
         drawPaint.setColor(paintColor);
         drawPaint.setAntiAlias(true);
-        drawPaint.setStrokeWidth(20);
+        drawPaint.setStrokeWidth(brushSize);
         drawPaint.setStyle(Paint.Style.STROKE);
         drawPaint.setStrokeJoin(Paint.Join.ROUND);
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
         canvasPaint = new Paint(Paint.DITHER_FLAG);
+
+        brushSize = getResources().getInteger(R.integer.medium_size);
+        lastBrushSize = brushSize;
+
+    }
+
+    public void setBrushSize(float newSize){
+        //update size
+        float pixelAmount = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                newSize, getResources().getDisplayMetrics());
+        brushSize=pixelAmount;
+        drawPaint.setStrokeWidth(brushSize);
+    }
+
+    public void setLastBrushSize(float lastSize){
+        lastBrushSize=lastSize;
+    }
+    public float getLastBrushSize(){
+        return lastBrushSize;
+    }
+
+    public void setErase(boolean isErase){
+        //set erase true or false
 
     }
 
