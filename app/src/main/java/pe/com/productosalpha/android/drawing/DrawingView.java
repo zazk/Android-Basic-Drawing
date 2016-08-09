@@ -73,7 +73,7 @@ public class DrawingView extends View {
     public void setErase(boolean isErase){
         //set erase true or false
         erase=isErase;
-        if(erase) drawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        if(erase) this.setColor("#FFFFFFFF"); //drawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         else drawPaint.setXfermode(null);
     }
 
