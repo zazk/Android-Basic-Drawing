@@ -1,6 +1,10 @@
 package pe.com.productosalpha.android.drawing;
 
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapShader;
 import android.graphics.Color;
+import android.graphics.Point;
+import android.graphics.Shader;
 import android.view.View;
 import android.content.Context;
 import android.util.AttributeSet;
@@ -12,6 +16,9 @@ import android.view.MotionEvent;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.util.TypedValue;
+
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Created by user on 8/7/16.
@@ -32,6 +39,8 @@ public class DrawingView extends View {
     private float brushSize, lastBrushSize;
 
     private boolean erase=false;
+
+    private boolean isFilling = false;  //for flood fill
 
     public DrawingView( Context context, AttributeSet attributeSet){
         super(context,attributeSet);
@@ -102,19 +111,31 @@ public class DrawingView extends View {
         //detect user touch
         float touchX = event.getX();
         float touchY = event.getY();
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                drawPath.moveTo(touchX, touchY);
-                break;
-            case MotionEvent.ACTION_MOVE:
-                drawPath.lineTo(touchX, touchY);
-                break;
-            case MotionEvent.ACTION_UP:
-                drawCanvas.drawPath(drawPath, drawPaint);
-                drawPath.reset();
-                break;
-            default:
-                return false;
+
+        if (isFilling) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_UP:
+                    FloodFill(new Point((int) touchX, (int) touchY));
+                    break;
+
+                default:
+                    return true;
+            }
+        } else {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    drawPath.moveTo(touchX, touchY);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    drawPath.lineTo(touchX, touchY);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    drawCanvas.drawPath(drawPath, drawPaint);
+                    drawPath.reset();
+                    break;
+                default:
+                    return false;
+            }
         }
         invalidate();
         return true;
@@ -125,6 +146,68 @@ public class DrawingView extends View {
         invalidate();
         paintColor = Color.parseColor(newColor);
         drawPaint.setColor(paintColor);
+        drawPaint.setShader(null);
     }
 
+    //set pattern
+    public void setPattern(String newPattern) {
+        invalidate();
+
+        int patternID = getResources().getIdentifier(newPattern, "drawable", "com.example.ankit.drawingfun");
+
+        Bitmap patternBMP = BitmapFactory.decodeResource(getResources(), patternID);
+
+        BitmapShader patternBMPshader = new BitmapShader(patternBMP,
+                Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+
+        drawPaint.setColor(0xFFFFFFFF);
+        drawPaint.setShader(patternBMPshader);
+    }
+
+
+
+    //fill effect
+    public void fillColor() {
+        isFilling = true;
+    }
+
+    private synchronized void FloodFill(Point startPoint) {
+
+        Queue<Point> queue = new LinkedList<>();
+        queue.add(startPoint);
+
+        int targetColor = canvasBitmap.getPixel(startPoint.x, startPoint.y);
+
+        while (queue.size() > 0) {
+            Point nextPoint = queue.poll();
+            if (canvasBitmap.getPixel(nextPoint.x, nextPoint.y) != targetColor)
+                continue;
+
+            Point point = new Point(nextPoint.x + 1, nextPoint.y);
+
+            while ((nextPoint.x > 0) && (canvasBitmap.getPixel(nextPoint.x, nextPoint.y) == targetColor)) {
+                canvasBitmap.setPixel(nextPoint.x, nextPoint.y, paintColor);
+                if ((nextPoint.y > 0) && (canvasBitmap.getPixel(nextPoint.x, nextPoint.y - 1) == targetColor))
+                    queue.add(new Point(nextPoint.x, nextPoint.y - 1));
+                if ((nextPoint.y < canvasBitmap.getHeight() - 1)
+                        && (canvasBitmap.getPixel(nextPoint.x, nextPoint.y + 1) == targetColor))
+                    queue.add(new Point(nextPoint.x, nextPoint.y + 1));
+                nextPoint.x--;
+            }
+
+            while ((point.x < canvasBitmap.getWidth() - 1)
+                    && (canvasBitmap.getPixel(point.x, point.y) == targetColor)) {
+                canvasBitmap.setPixel(point.x, point.y, paintColor);
+
+                if ((point.y > 0) && (canvasBitmap.getPixel(point.x, point.y - 1) == targetColor))
+                    queue.add(new Point(point.x, point.y - 1));
+                if ((point.y < canvasBitmap.getHeight() - 1)
+                        && (canvasBitmap.getPixel(point.x, point.y + 1) == targetColor))
+                    queue.add(new Point(point.x, point.y + 1));
+                point.x++;
+            }
+        }
+
+        isFilling = false;
+    }
 }
