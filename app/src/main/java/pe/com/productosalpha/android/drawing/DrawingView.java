@@ -153,7 +153,7 @@ public class DrawingView extends View {
     public void setPattern(String newPattern) {
         invalidate();
 
-        int patternID = getResources().getIdentifier(newPattern, "drawable", "com.example.ankit.drawingfun");
+        int patternID = getResources().getIdentifier(newPattern, "drawable", "pe.com.productosalpha.android.drawing");
 
         Bitmap patternBMP = BitmapFactory.decodeResource(getResources(), patternID);
 
